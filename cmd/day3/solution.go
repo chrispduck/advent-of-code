@@ -25,7 +25,7 @@ func part1(filename string) int {
 		c := len(rucksackItems)
 		itemsA, itemsB := rucksackItems[:c/2], rucksackItems[c/2:]
 		commonItems = append(commonItems, findCommon(itemsA, itemsB))
-		fmt.Println(commonItems)
+		//fmt.Println(commonItems)
 	}
 	return computeScore(commonItems)
 }
@@ -40,23 +40,23 @@ func part2(filename string) int {
 	for scanner.Scan() {
 		lines[i%3] = scanner.Text()
 		if i%3 == 2 {
-			fmt.Println(lines)
+			//fmt.Println(lines)
 			badges = append(badges, findBadge(lines[0], lines[1], lines[2]))
 		}
 		i++
 	}
-	fmt.Printf("%c\n", badges)
+	//fmt.Printf("%c\n", badges)
 	return computeScore(badges)
 }
 
 func findCommon(s1 string, s2 string) rune {
-	inS1 := make(map[string]bool)
+	inS1 := make(map[rune]bool)
 	for _, c := range s1 {
-		inS1[string(c)] = true
+		inS1[c] = true
 	}
 	for _, c := range s2 {
-		if inS1[string(c)] == true {
-			fmt.Println(string(c))
+		if inS1[c] == true {
+			//fmt.Println(string(c))
 			return c
 		}
 	}
