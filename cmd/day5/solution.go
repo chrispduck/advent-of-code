@@ -10,17 +10,32 @@ import (
 )
 
 func main() {
+
 	fmt.Println(part1("example_input.txt", 3))
 	fmt.Println(part1("input.txt", 9))
+
+	fmt.Println(part2("example_input.txt", 3))
+	fmt.Println(part2("input.txt", 9))
 }
 
 func part1(filename string, n int) string {
+	stacks, instructions := readInput(filename, n)
+	executeA(instructions, &stacks)
+	return getTopCrates(&stacks)
+}
+
+func part2(filename string, n int) string {
+	stacks, instructions := readInput(filename, n)
+	executeB(instructions, &stacks)
+	return getTopCrates(&stacks)
+}
+
+func readInput(filename string, n int) (stacks [][]rune, instructions [][]int) {
 	f, err := os.Open(filename)
 	checkErr(err)
 	scanner := bufio.NewScanner(f)
 
-	stacks := make([][]rune, n)
-	var instructions [][]int
+	stacks = make([][]rune, n)
 	stateRead := false
 	for scanner.Scan() {
 		line := scanner.Text()
@@ -32,20 +47,15 @@ func part1(filename string, n int) string {
 		} else {
 			if !stateRead {
 				//fmt.Println("parsing input")
-
 				parseInputState(&stacks, line, n)
 				//fmt.Printf("stacks main: %+c\n", stacks)
-
 			} else {
 				instructions = append(instructions, parseInstruction(line))
 			}
 		}
 	}
 	checkErr(scanner.Err())
-	//fmt.Println(instructions)
-	execute(instructions, &stacks)
-	//fmt.Printf("stacks main: %+c\n", stacks)
-	return getTopCrates(&stacks)
+	return stacks, instructions
 }
 
 func parseInputState(stacks *[][]rune, line string, n int) {
@@ -96,7 +106,7 @@ func prepend(arr *[]rune, item rune) {
 	*arr = append([]rune{item}, *arr...)
 }
 
-func execute(instructions [][]int, stacks *[][]rune) {
+func executeA(instructions [][]int, stacks *[][]rune) {
 	for _, instruction := range instructions {
 		repeats, from, to := instruction[0], instruction[1], instruction[2]
 		//fmt.Printf("stack state: %+c\n", stacks)
@@ -108,7 +118,24 @@ func execute(instructions [][]int, stacks *[][]rune) {
 	}
 }
 
+func executeB(instructions [][]int, stacks *[][]rune) {
+	for _, instruction := range instructions {
+		repeats, from, to := instruction[0], instruction[1], instruction[2]
+		fmt.Printf("stack state: %+c\n", stacks)
+		_ = to
+		size := len((*stacks)[from-1])
+		fmt.Println(repeats, from, to, size)
+		items := (*stacks)[from-1][size-repeats : size]
+		fmt.Printf("items %c\n", items)
+		// remove them from the previous
+		(*stacks)[from-1] = (*stacks)[from-1][:size-repeats]
+		// add them to other
+		(*stacks)[to-1] = append((*stacks)[to-1], items...)
+	}
+}
+
 func getTopCrates(stacks *[][]rune) string {
+	fmt.Printf("final state %+c\n", stacks)
 	res := ""
 	for i := 0; i < len(*stacks); i++ {
 		res += string((*stacks)[i][len((*stacks)[i])-1])
