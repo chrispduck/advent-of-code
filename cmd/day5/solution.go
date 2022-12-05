@@ -39,16 +39,12 @@ func readInput(filename string, n int) (stacks [][]rune, instructions [][]int) {
 	stateRead := false
 	for scanner.Scan() {
 		line := scanner.Text()
-		//fmt.Println(line)
 		if (line == "") || (line[1] == '1') {
 			// deal with split between state input and instructions
-			//fmt.Println("now reading instructions")
 			stateRead = true
 		} else {
 			if !stateRead {
-				//fmt.Println("parsing input")
 				parseInputState(&stacks, line, n)
-				//fmt.Printf("stacks main: %+c\n", stacks)
 			} else {
 				instructions = append(instructions, parseInstruction(line))
 			}
@@ -65,11 +61,9 @@ func parseInputState(stacks *[][]rune, line string, n int) {
 			return
 		}
 		if line[idx] != ' ' {
-			//fmt.Printf("input letter: %c", line[idx])
 			prepend(&(*stacks)[i], rune(line[idx]))
 		}
 	}
-	//fmt.Printf("%c\n, %c\n, %c\n", (*stacks)[0], (*stacks)[1], (*stacks)[2])
 }
 
 func parseInstruction(line string) []int {
@@ -91,10 +85,8 @@ func checkErr(err error) {
 }
 
 func pop(arr *[]rune) rune {
-	//fmt.Printf("stack pop %c\n", arr)
 	res := (*arr)[len(*arr)-1]
 	*arr = (*arr)[:len(*arr)-1]
-	//fmt.Printf("stack pop %c, item %c\n", arr, res)
 	return res
 }
 
@@ -109,8 +101,6 @@ func prepend(arr *[]rune, item rune) {
 func executeA(instructions [][]int, stacks *[][]rune) {
 	for _, instruction := range instructions {
 		repeats, from, to := instruction[0], instruction[1], instruction[2]
-		//fmt.Printf("stack state: %+c\n", stacks)
-		//fmt.Println(repeats, from, to)
 		for i := 0; i < repeats; i++ {
 			item := pop(&(*stacks)[from-1])
 			push(&(*stacks)[to-1], item)
@@ -121,12 +111,9 @@ func executeA(instructions [][]int, stacks *[][]rune) {
 func executeB(instructions [][]int, stacks *[][]rune) {
 	for _, instruction := range instructions {
 		repeats, from, to := instruction[0], instruction[1], instruction[2]
-		fmt.Printf("stack state: %+c\n", stacks)
 		_ = to
 		size := len((*stacks)[from-1])
-		fmt.Println(repeats, from, to, size)
 		items := (*stacks)[from-1][size-repeats : size]
-		fmt.Printf("items %c\n", items)
 		// remove them from the previous
 		(*stacks)[from-1] = (*stacks)[from-1][:size-repeats]
 		// add them to other
@@ -135,7 +122,6 @@ func executeB(instructions [][]int, stacks *[][]rune) {
 }
 
 func getTopCrates(stacks *[][]rune) string {
-	fmt.Printf("final state %+c\n", stacks)
 	res := ""
 	for i := 0; i < len(*stacks); i++ {
 		res += string((*stacks)[i][len((*stacks)[i])-1])
