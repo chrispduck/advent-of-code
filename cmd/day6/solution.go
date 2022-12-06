@@ -7,23 +7,34 @@ import (
 	"os"
 )
 
-func main() {
-	//fmt.Println(part1("bvwbjplbgvbhsrlpgdmjqwftvncz", 4))
-	//fmt.Println(part1("nppdvjthqldpwncqszvftbrmjlhg", 4))
-	//fmt.Println(part1("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", 4))
-	//fmt.Println(part1("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", 4))
-	s := loadInput("input.txt")
-	fmt.Println(part1(s, 4))
+const (
+	tokenLengthPart1 = 4
+	tokenLengthPart2 = 14
+)
 
-	//fmt.Println(part1("mjqjpqmgbljsphdztnvjfqwrcgsmlb", 14))
-	//fmt.Println(part1("bvwbjplbgvbhsrlpgdmjqwftvncz", 14))
-	//fmt.Println(part1("nppdvjthqldpwncqszvftbrmjlhg", 14))
-	//fmt.Println(part1("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg", 14))
-	//fmt.Println(part1("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw", 14))
-	fmt.Println(part1(s, 14))
+func main() {
+	//fmt.Println(part1("bvwbjplbgvbhsrlpgdmjqwftvncz"))
+	//fmt.Println(part1("nppdvjthqldpwncqszvftbrmjlhg"))
+	//fmt.Println(part1("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"))
+	//fmt.Println(part1("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"))
+	s := loadInput("input.txt")
+	fmt.Println(part1(s))
+
+	//fmt.Println(part2("mjqjpqmgbljsphdztnvjfqwrcgsmlb"))
+	//fmt.Println(part2("bvwbjplbgvbhsrlpgdmjqwftvncz"))
+	//fmt.Println(part2("nppdvjthqldpwncqszvftbrmjlhg"))
+	//fmt.Println(part2("nznrnfrfntjfmvfwmzdfjlvtqnbhcprsg"))
+	//fmt.Println(part2("zcfzfwzzqfrljwzlrfnpqdbhtmscgvjw"))
+	fmt.Println(part2(s))
 }
 
-func part1(s string, tokenLength int) int {
+func part1(s string) int {
+	return solution(s, tokenLengthPart1)
+}
+func part2(s string) int {
+	return solution(s, tokenLengthPart2)
+}
+func solution(s string, tokenLength int) int {
 	d := map[rune]int{}
 
 	// initialise d as a counter of letters in sliding window
