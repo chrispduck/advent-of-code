@@ -7,7 +7,7 @@ import (
 	"os"
 )
 
-func main() {
+func _main() {
 	filename := "example_input.txt"
 	//filename := "input.txt"
 	part1, _ := solveRunes(filename)
