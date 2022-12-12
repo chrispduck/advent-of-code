@@ -3,16 +3,18 @@ package main
 import (
 	"advent-of-code/cmd/utils"
 	"bufio"
+	"errors"
 	"fmt"
 	"log"
+	"math"
 	"os"
 )
 
 func main() {
 	fmt.Println(part1("example_input.txt"))
 	fmt.Println(part1("input.txt"))
-	//fmt.Println(part2("example_input.txt"))
-	//fmt.Println(part2("input.txt"))
+	fmt.Println(part2("example_input.txt"))
+	fmt.Println(part2("input.txt"))
 }
 
 func loadInput(filename string) (grid [][]rune) {
@@ -31,12 +33,6 @@ type coordinate struct {
 	x, y int
 }
 
-func printGrid(grid [][]rune) {
-	for _, row := range grid {
-		fmt.Printf("%c\n", row)
-	}
-}
-
 func findLetter(letter rune, grid [][]rune) coordinate {
 	for j := 0; j < len(grid); j++ {
 		for i := 0; i < len(grid[0]); i++ {
@@ -53,56 +49,60 @@ func findLetter(letter rune, grid [][]rune) coordinate {
 }
 func part1(filename string) int {
 	grid := loadInput(filename)
-	printGrid(grid)
 	start := findLetter('S', grid)
 	finish := findLetter('E', grid)
 	// replace with heights
 	grid[start.y][start.x] = 'a'
 	grid[finish.y][finish.x] = 'z'
-	sizeX := len(grid[0])
-	sizeY := len(grid)
+	moves, err := findMinMoves(start, finish, grid)
+	utils.CheckErr(err)
+	return moves
+}
 
+func neighbourCoords(c coordinate) []coordinate {
+	return []coordinate{
+		{
+			x: c.x + 1,
+			y: c.y,
+		},
+		{
+			x: c.x - 1,
+			y: c.y,
+		},
+		{
+			x: c.x,
+			y: c.y + 1,
+		},
+		{
+			x: c.x,
+			y: c.y - 1,
+		},
+	}
+}
+func findMinMoves(start, finish coordinate, grid [][]rune) (int, error) {
 	// initialise
 	reachableIn := map[coordinate]int{start: 0}
 	move := 0
 	newCoords := []coordinate{start}
-
+	sizeX := len(grid[0])
+	sizeY := len(grid)
 	for {
 		// while not found the finish, make a move from every new coordinate
 		move += 1
-		fmt.Println(move, newCoords)
 		if len(newCoords) == 0 {
-			log.Fatalln("got stuck")
+			return -1, errors.New("failed to find route")
 		}
 		var nextCoords []coordinate
 		for _, newCoord := range newCoords {
 			// try moving in every direction
-			possibleNextCoords := []coordinate{
-				{
-					x: newCoord.x + 1,
-					y: newCoord.y,
-				},
-				{
-					x: newCoord.x - 1,
-					y: newCoord.y,
-				},
-				{
-					x: newCoord.x,
-					y: newCoord.y + 1,
-				},
-				{
-					x: newCoord.x,
-					y: newCoord.y - 1,
-				},
-			}
+			possibleNextCoords := neighbourCoords(newCoord)
 			for _, c := range possibleNextCoords {
-
 				// is it a valid move?
 				inTheGrid := c.x >= 0 && c.y >= 0 && c.x < sizeX && c.y < sizeY
 				if !inTheGrid {
 					continue
 				}
-				stepLessThanOne := utils.Abs(int(grid[newCoord.y][newCoord.x]-grid[c.y][c.x])) <= 1
+				stepLessThanOne := int(grid[c.y][c.x]-grid[newCoord.y][newCoord.x]) <= 1
 				if !stepLessThanOne {
 					continue
 				}
@@ -113,18 +113,49 @@ func part1(filename string) int {
 				}
 				// final move
 				if c == finish {
-					return move
+					return move, nil
 				}
 				// add squares reached and to deviate from in the next moves
 				reachableIn[c] = move
 				nextCoords = append(nextCoords, c)
 			}
-
 		}
 		newCoords = nextCoords
 	}
 }
 
+func findAllLetters(letter rune, grid [][]rune) []coordinate {
+	var coords []coordinate
+	for j := 0; j < len(grid); j++ {
+		for i := 0; i < len(grid[0]); i++ {
+			if grid[j][i] == letter {
+				coords = append(coords, coordinate{
+					x: i,
+					y: j,
+				})
+			}
+		}
+	}
+	return coords
+}
 func part2(filename string) int {
-	return 0
+	grid := loadInput(filename)
+	start := findLetter('S', grid)
+	finish := findLetter('E', grid)
+
+	// replace with heights
+	grid[start.y][start.x] = 'a'
+	grid[finish.y][finish.x] = 'z'
+
+	// for all letter a
+	possibleStartingPositions := findAllLetters('a', grid)
+	shortestPathLength := math.MaxInt
+	for _, start := range possibleStartingPositions {
+		// some starting points are isolated from finish, handle err
+		pathLength, err := findMinMoves(start, finish, grid)
+		if err == nil && pathLength < shortestPathLength {
+			shortestPathLength = pathLength
+		}
+	}
+	return shortestPathLength
 }
