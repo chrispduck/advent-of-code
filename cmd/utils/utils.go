@@ -24,9 +24,38 @@ func Max(x, y int) int {
 	return y
 }
 
+func Min(x, y int) int {
+	if x < y {
+		return x
+	}
+	return y
+}
+
 func Abs(x int) int {
 	if x > 0 {
 		return x
 	}
 	return -x
+}
+
+type Coordinate struct {
+	X, Y int
+}
+
+func (c Coordinate) Add(to Coordinate) Coordinate {
+	return Coordinate{
+		c.X + to.X,
+		c.Y + to.Y,
+	}
+}
+
+func (c Coordinate) Subtract(to Coordinate) Coordinate {
+	return Coordinate{
+		c.X - to.X,
+		c.Y - to.Y,
+	}
+}
+
+func (c Coordinate) L1Distance(to Coordinate) int {
+	return Abs(c.X-to.X) + Abs(c.X-to.X)
 }
