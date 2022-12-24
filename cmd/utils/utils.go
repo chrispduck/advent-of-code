@@ -57,5 +57,5 @@ func (c Coordinate) Subtract(to Coordinate) Coordinate {
 }
 
 func (c Coordinate) L1Distance(to Coordinate) int {
-	return Abs(c.X-to.X) + Abs(c.X-to.X)
+	return Abs(c.X-to.X) + Abs(c.Y-to.Y)
 }
