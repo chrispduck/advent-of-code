@@ -4,8 +4,11 @@ import (
 	"advent-of-code/cmd/utils"
 	"bufio"
 	"fmt"
+	"log"
 	"math"
 	"os"
+	"strconv"
+	"strings"
 )
 
 const (
@@ -13,10 +16,10 @@ const (
 )
 
 func main() {
-	fmt.Println(part1("example_input.txt", 2022))
+	//fmt.Println(part1("example_input.txt", 2022))
 	//fmt.Println(part1("input.txt", 2022))
-	//fmt.Println(part2("example_input.txt", 1_000_000_000))
-	//fmt.Println(part2("input.txt"))
+	fmt.Println(part2("example_input.txt", 1_000_000_000_000))
+	fmt.Println(part2("input.txt", 1_000_000_000_000))
 }
 
 type Shape struct {
@@ -170,6 +173,39 @@ func createShapes() []Shape {
 	return allShapes
 }
 
+func boolToString(b bool) string {
+	if b {
+		return "#"
+	}
+	return "."
+}
+
+// HOW TO FIND A CYCLE
+// Have we seen this piece before, this command position, and the top 30 rows of the rock formation the same?
+// If so, what position was it?
+
+// idxCmd 0 based, peice 0 based idx
+func stateString(cmdIdx int, peiceIdx int, grid [][]bool) string {
+	fmt.Println(cmdIdx, peiceIdx)
+	gridString := ""
+	if len(grid) != 30 {
+		log.Fatalln("grid is :", len(grid))
+	}
+	for y := 0; y < 30; y++ {
+		for x := 0; x < 7; x++ {
+			gridString += boolToString(grid[y][x])
+		}
+	}
+	return strconv.Itoa(cmdIdx) + "-" + strconv.Itoa(peiceIdx) + "" + gridString
+}
+
+func getLastNRows(n, ymax int, grid [][]bool) [][]bool {
+	if ymax < n {
+		return grid[:n]
+	}
+	return grid[ymax-n : ymax]
+}
+
 func part1(filename string, nRocks int) int {
 	cmds := loadInput(filename)
 	//fmt.Printf("%c\n", cmds)
@@ -178,27 +214,48 @@ func part1(filename string, nRocks int) int {
 	nShapes := len(allShapes)
 	ymax := -1
 	idxCmd := 0
-	m, n := nRocks*4, 7
+	m, n := utils.Min(nRocks*4, 1_000_000), 7
 	grid := make([][]bool, m)
 	for i := 0; i < m; i++ {
 		grid[i] = make([]bool, n)
 	}
 
 	printEvery := nRocks / 100
-	//once := false
 	// while still got pieces to go forth:
+	heights := make(map[string]int)
+	rocksPlaced := make(map[string]int)
+	toAddheight := 0
+	foundLoop := false
 	for i := 0; i < nRocks; i++ {
-		//if nRocks%5 == 0 && idxCmd == 0 && once {
-		//	// back to the start
-		//	fmt.Println("back to the start")
-		//	fmt.Println("ymax: ", ymax)
-		//	printGrid(Shape{}, grid[ymax-5:ymax])
-		//}
-		//once = true
+		upperGrid := getLastNRows(30, ymax, grid)
+		//fmt.Println(upperGrid)
+		stateString := stateString(idxCmd, i%nShapes, upperGrid)
+		yPrev, exists := heights[stateString]
+		if exists && !foundLoop {
+			foundLoop = true
+			//fmt.Println("found loop!!!! idxCmd:", idxCmd, " idxShape ", i%nShapes)
+			//fmt.Println("current height, ", ymax, "last height", yPrev)
+			//fmt.Println(stateString)
+			loopLength := i - rocksPlaced[stateString]
+			loopHeight := ymax - yPrev
+			rocksRemaining := nRocks - i
+			//fmt.Println("last i", rocksPlaced[stateString], "current i", i, "loop length", loopLength)
+			repetitions := rocksRemaining / loopLength
+
+			// Add the height at the end
+			toAddheight = repetitions * loopHeight
+			i += repetitions * loopLength
+			//fmt.Println("to add height ", toAddheight)
+			//fmt.Println("i := ", i)
+			//log.Fatalln("done")
+		}
+		heights[stateString] = ymax
+		rocksPlaced[stateString] = i
+
 		if i%(printEvery) == 0 {
 			percent := i / printEvery
-			_ = percent
-			//fmt.Println(percent, strings.Repeat("#", percent/10))
+			//_ = percent
+			fmt.Println(percent, strings.Repeat("#", percent/10))
 		}
 		// create the right new shape
 		shapeToPlace := allShapes[i%nShapes]
@@ -234,7 +291,7 @@ func part1(filename string, nRocks int) int {
 	}
 	//fmt.Println("\n\nFINAL GRID")
 	//printGrid(Shape{}, grid)
-	return ymax + 1
+	return ymax + 1 + toAddheight
 }
 
 func part2(filename string, nRocks int) int {
