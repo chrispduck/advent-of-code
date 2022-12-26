@@ -10,14 +10,12 @@ import (
 
 const (
 	vertOffset = 3
-	leftOffset
-	width = 7
 )
 
 func main() {
-	fmt.Println(part1("example_input.txt"))
-	//fmt.Println(part1("input.txt"))
-	//fmt.Println(part2("example_input.txt"))
+	fmt.Println(part1("example_input.txt", 2022))
+	//fmt.Println(part1("input.txt", 2022))
+	//fmt.Println(part2("example_input.txt", 1_000_000_000))
 	//fmt.Println(part2("input.txt"))
 }
 
@@ -26,14 +24,11 @@ type Shape struct {
 	Coords []utils.Coordinate
 }
 
-type grid struct {
-	arr [][]int
-}
-
 func (s Shape) move(x utils.Coordinate) Shape {
 	var res Shape
-	for _, c := range s.Coords {
-		res.Coords = append(res.Coords, c.Add(x))
+	res.Coords = make([]utils.Coordinate, len(s.Coords))
+	for idx, _ := range s.Coords {
+		res.Coords[idx] = s.Coords[idx].Add(x)
 	}
 	return res
 }
@@ -77,14 +72,14 @@ func (s Shape) hitWall() bool {
 	return false
 }
 
-func attemptLRMove(move rune, s Shape, grid [][]bool) Shape {
+func attemptLRMove(move rune, s Shape, grid *[][]bool) Shape {
 	var res Shape
 	switch move {
 	case '<':
-		fmt.Println("moving left")
+		//fmt.Println("moving left")
 		res = s.leftOne()
 	case '>':
-		fmt.Println("moving right")
+		//fmt.Println("moving right")
 		res = s.rightOne()
 	}
 	isHitWall := res.hitWall()
@@ -93,13 +88,13 @@ func attemptLRMove(move rune, s Shape, grid [][]bool) Shape {
 	}
 	isGridCollision := gridCollision(res, grid)
 	if isGridCollision {
-		fmt.Println("grid collision")
+		//fmt.Println("grid collision")
 		return s
 	}
 	return res
 }
 
-func attemptDownMove(s Shape, grid [][]bool) (isHitBottom bool, s2 Shape) {
+func attemptDownMove(s Shape, grid *[][]bool) (isHitBottom bool, s2 Shape) {
 	res := s.downOne()
 	if isGridCollision := gridCollision(res, grid); isGridCollision {
 		return true, s
@@ -107,16 +102,15 @@ func attemptDownMove(s Shape, grid [][]bool) (isHitBottom bool, s2 Shape) {
 	return false, res
 }
 
-func addToGrid(s Shape, grid [][]bool) [][]bool {
+func addToGrid(s Shape, grid *[][]bool) {
 	for _, c := range s.Coords {
-		grid[c.Y][c.X] = true
+		(*grid)[c.Y][c.X] = true
 	}
-	return grid
 }
 
-func gridCollision(s Shape, grid [][]bool) bool {
+func gridCollision(s Shape, grid *[][]bool) bool {
 	for _, c := range s.Coords {
-		if c.Y < 0 || grid[c.Y][c.X] {
+		if c.Y < 0 || (*grid)[c.Y][c.X] {
 			return true
 		}
 	}
@@ -124,7 +118,6 @@ func gridCollision(s Shape, grid [][]bool) bool {
 }
 
 func printGrid(s Shape, grid [][]bool) {
-
 	for y := len(grid) - 1; y >= 0; y-- {
 		line := "|"
 		for x := 0; x < len(grid[0]); x++ {
@@ -140,7 +133,6 @@ func printGrid(s Shape, grid [][]bool) {
 		fmt.Println(line)
 	}
 	fmt.Println("+-------+")
-	// print floor
 }
 
 func loadInput(filename string) (cmds []rune) {
@@ -158,10 +150,7 @@ func loadInput(filename string) (cmds []rune) {
 	return []rune{}
 }
 
-func part1(filename string) int {
-	cmds := loadInput(filename)
-	fmt.Printf("%c\n", cmds)
-
+func createShapes() []Shape {
 	horizontal := Shape{
 		Coords: []utils.Coordinate{{2, 0}, {3, 0}, {4, 0}, {5, 0}},
 	}
@@ -171,53 +160,83 @@ func part1(filename string) int {
 	backwardL := Shape{
 		Coords: []utils.Coordinate{{2, 0}, {3, 0}, {4, 0}, {4, 1}, {4, 2}},
 	}
-	allShapes := []Shape{horizontal, plus, backwardL}
+	vert := Shape{
+		Coords: []utils.Coordinate{{2, 0}, {2, 1}, {2, 2}, {2, 3}},
+	}
+	square := Shape{
+		Coords: []utils.Coordinate{{2, 0}, {3, 0}, {2, 1}, {3, 1}},
+	}
+	allShapes := []Shape{horizontal, plus, backwardL, vert, square}
+	return allShapes
+}
+
+func part1(filename string, nRocks int) int {
+	cmds := loadInput(filename)
+	//fmt.Printf("%c\n", cmds)
+	//fmt.Println("number of commands: ", len(cmds))
+	allShapes := createShapes()
 	nShapes := len(allShapes)
-	nRocks := 3
 	ymax := -1
 	idxCmd := 0
-	m, n := 10, 7
+	m, n := nRocks*4, 7
 	grid := make([][]bool, m)
 	for i := 0; i < m; i++ {
 		grid[i] = make([]bool, n)
 	}
+
+	printEvery := nRocks / 100
+	//once := false
 	// while still got pieces to go forth:
 	for i := 0; i < nRocks; i++ {
+		//if nRocks%5 == 0 && idxCmd == 0 && once {
+		//	// back to the start
+		//	fmt.Println("back to the start")
+		//	fmt.Println("ymax: ", ymax)
+		//	printGrid(Shape{}, grid[ymax-5:ymax])
+		//}
+		//once = true
+		if i%(printEvery) == 0 {
+			percent := i / printEvery
+			_ = percent
+			//fmt.Println(percent, strings.Repeat("#", percent/10))
+		}
 		// create the right new shape
 		shapeToPlace := allShapes[i%nShapes]
 
 		// put it in the correct v offset compared with the grid (wrt to the yMax of the grid)
 		shapeToPlace = shapeToPlace.move(utils.Coordinate{X: 0, Y: vertOffset + ymax + 1})
-		fmt.Println("\n\nPLACING NEW SHAPE")
+		//fmt.Println("\n\nPLACING NEW SHAPE")
 		for {
-			fmt.Println("start of loop")
-			fmt.Println(shapeToPlace)
-			printGrid(shapeToPlace, grid)
+			//fmt.Println("start of loop")
+			//fmt.Println(shapeToPlace)
+			//printGrid(shapeToPlace, grid)
 			// move it across if possible
-			shapeToPlace = attemptLRMove(cmds[idxCmd], shapeToPlace, grid)
-			idxCmd++ // never reuse
+			shapeToPlace = attemptLRMove(cmds[idxCmd], shapeToPlace, &grid)
+			idxCmd++
+			idxCmd = idxCmd % len(cmds) // never reuse
 			// move down if possible, and repeat else break
 			var isHitBottom bool
-			isHitBottom, shapeToPlace = attemptDownMove(shapeToPlace, grid)
+			isHitBottom, shapeToPlace = attemptDownMove(shapeToPlace, &grid)
 
 			// place shape into grid, and update yMax
 			if isHitBottom {
-				fmt.Println("placing: ", shapeToPlace)
-				grid = addToGrid(shapeToPlace, grid)
-				fmt.Println("\n\nplaced shape")
-				printGrid(shapeToPlace, grid)
+				//fmt.Println("placing: ", shapeToPlace)
+				addToGrid(shapeToPlace, &grid)
+				//fmt.Println("\n\nplaced shape")
+				//printGrid(shapeToPlace, grid)
 				if shapeToPlace.yMax() > ymax {
 					ymax = shapeToPlace.yMax()
-					fmt.Println("updated ymax to ", ymax)
+					//fmt.Println("updated ymax to ", ymax)
 				}
 				break
 			}
 		}
 	}
-
-	return 0
+	//fmt.Println("\n\nFINAL GRID")
+	//printGrid(Shape{}, grid)
+	return ymax + 1
 }
 
-func part2(filename string) int {
-	return 0
+func part2(filename string, nRocks int) int {
+	return part1(filename, nRocks)
 }
