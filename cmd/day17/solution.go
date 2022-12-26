@@ -8,7 +8,6 @@ import (
 	"math"
 	"os"
 	"strconv"
-	"strings"
 )
 
 const (
@@ -79,10 +78,8 @@ func attemptLRMove(move rune, s Shape, grid *[][]bool) Shape {
 	var res Shape
 	switch move {
 	case '<':
-		//fmt.Println("moving left")
 		res = s.leftOne()
 	case '>':
-		//fmt.Println("moving right")
 		res = s.rightOne()
 	}
 	isHitWall := res.hitWall()
@@ -91,7 +88,6 @@ func attemptLRMove(move rune, s Shape, grid *[][]bool) Shape {
 	}
 	isGridCollision := gridCollision(res, grid)
 	if isGridCollision {
-		//fmt.Println("grid collision")
 		return s
 	}
 	return res
@@ -186,7 +182,6 @@ func boolToString(b bool) string {
 
 // idxCmd 0 based, peice 0 based idx
 func stateString(cmdIdx int, peiceIdx int, grid [][]bool) string {
-	fmt.Println(cmdIdx, peiceIdx)
 	gridString := ""
 	if len(grid) != 30 {
 		log.Fatalln("grid is :", len(grid))
@@ -208,8 +203,6 @@ func getLastNRows(n, ymax int, grid [][]bool) [][]bool {
 
 func part1(filename string, nRocks int) int {
 	cmds := loadInput(filename)
-	//fmt.Printf("%c\n", cmds)
-	//fmt.Println("number of commands: ", len(cmds))
 	allShapes := createShapes()
 	nShapes := len(allShapes)
 	ymax := -1
@@ -220,53 +213,38 @@ func part1(filename string, nRocks int) int {
 		grid[i] = make([]bool, n)
 	}
 
-	printEvery := nRocks / 100
-	// while still got pieces to go forth:
+	// to find cycles & implement skip
 	heights := make(map[string]int)
 	rocksPlaced := make(map[string]int)
 	toAddheight := 0
 	foundLoop := false
+
 	for i := 0; i < nRocks; i++ {
+		// check for cycles
 		upperGrid := getLastNRows(30, ymax, grid)
-		//fmt.Println(upperGrid)
 		stateString := stateString(idxCmd, i%nShapes, upperGrid)
 		yPrev, exists := heights[stateString]
 		if exists && !foundLoop {
 			foundLoop = true
-			//fmt.Println("found loop!!!! idxCmd:", idxCmd, " idxShape ", i%nShapes)
-			//fmt.Println("current height, ", ymax, "last height", yPrev)
-			//fmt.Println(stateString)
 			loopLength := i - rocksPlaced[stateString]
 			loopHeight := ymax - yPrev
 			rocksRemaining := nRocks - i
-			//fmt.Println("last i", rocksPlaced[stateString], "current i", i, "loop length", loopLength)
 			repetitions := rocksRemaining / loopLength
 
 			// Add the height at the end
 			toAddheight = repetitions * loopHeight
 			i += repetitions * loopLength
-			//fmt.Println("to add height ", toAddheight)
-			//fmt.Println("i := ", i)
-			//log.Fatalln("done")
 		}
 		heights[stateString] = ymax
 		rocksPlaced[stateString] = i
 
-		if i%(printEvery) == 0 {
-			percent := i / printEvery
-			//_ = percent
-			fmt.Println(percent, strings.Repeat("#", percent/10))
-		}
+		// Place shape
 		// create the right new shape
 		shapeToPlace := allShapes[i%nShapes]
 
 		// put it in the correct v offset compared with the grid (wrt to the yMax of the grid)
 		shapeToPlace = shapeToPlace.move(utils.Coordinate{X: 0, Y: vertOffset + ymax + 1})
-		//fmt.Println("\n\nPLACING NEW SHAPE")
 		for {
-			//fmt.Println("start of loop")
-			//fmt.Println(shapeToPlace)
-			//printGrid(shapeToPlace, grid)
 			// move it across if possible
 			shapeToPlace = attemptLRMove(cmds[idxCmd], shapeToPlace, &grid)
 			idxCmd++
@@ -277,20 +255,14 @@ func part1(filename string, nRocks int) int {
 
 			// place shape into grid, and update yMax
 			if isHitBottom {
-				//fmt.Println("placing: ", shapeToPlace)
 				addToGrid(shapeToPlace, &grid)
-				//fmt.Println("\n\nplaced shape")
-				//printGrid(shapeToPlace, grid)
 				if shapeToPlace.yMax() > ymax {
 					ymax = shapeToPlace.yMax()
-					//fmt.Println("updated ymax to ", ymax)
 				}
 				break
 			}
 		}
 	}
-	//fmt.Println("\n\nFINAL GRID")
-	//printGrid(Shape{}, grid)
 	return ymax + 1 + toAddheight
 }
 
