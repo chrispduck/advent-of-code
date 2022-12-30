@@ -9,34 +9,26 @@ import (
 )
 
 func main() {
-	fmt.Println(part1("example_input.txt"))
-	//fmt.Println(part1("input.txt"))
+	//fmt.Println(part1("example_input.txt"))
+	fmt.Println(part1("input.txt"))
 	//fmt.Println(part2("example_input.txt"))
 	//fmt.Println(part2("input.txt"))
 }
 
 type State struct {
-	minute   int
-	score    int
-	position string
-	opened   map[string]interface{}
+	minutesLeft int
+	score       int
+	position    string
+	opened      map[string]interface{}
+	path        string
 }
-
+type ScorePath struct {
+	score int
+	path  string
+}
 type Rules struct {
 	flowRates map[string]int
 	graph     map[string][]string
-}
-
-// returns true if A is a superset of B.
-//ie if A union B >= B
-func isSuperset(a map[string]interface{}, b map[string]interface{}) bool {
-	for key, _ := range b {
-		_, exists := a[key]
-		if !exists {
-			return false
-		}
-	}
-	return true
 }
 
 func loadInput(filename string) (flowRates map[string]int, graph map[string][]string) {
@@ -64,70 +56,72 @@ func part1(filename string) int {
 	fmt.Println(flowRates)
 	fmt.Println(graph)
 	state := State{
-		minute:   0,
-		score:    0,
-		position: "AA",
-		opened:   make(map[string]interface{}),
+		minutesLeft: 30,
+		score:       0,
+		position:    "AA",
+		opened:      make(map[string]interface{}),
+		path:        "A",
 	}
 	rules := Rules{
 		flowRates: flowRates,
 		graph:     graph,
 	}
 
-	memoBestScore := make(map[string]int)
-	res := findMaxPressureRelief(state, rules, memoBestScore)
+	memo := make(map[string]ScorePath)
+	res := findMaxPressureRelief(state, rules, memo)
 
 	return res
 }
 
 func makeKey(state State) string {
-	return fmt.Sprintf("%d-%s-%s", state.minute, state.position, state.opened)
+	return fmt.Sprintf("%d-%s-%s-%s", state.minutesLeft, state.position, state.opened, state.score)
 }
 
-func findMaxPressureRelief(state State, rules Rules, memoBestScore map[string]int) int {
-	state.minute += 1
-	if state.minute > 30 {
-		fmt.Println(state.score, state.opened)
+func findMaxPressureRelief(state State, rules Rules, memo map[string]ScorePath) int {
+	//fmt.Println(state)
+	if state.minutesLeft <= 0 {
+		//fmt.Println("finished", state.score, state.opened, state.path)
 		return state.score
 	}
 
-	state.score += releasePressureOneMinute(state.opened, rules.flowRates)
-
 	// is the path worth exploring?
 	key := makeKey(state)
-	if state.score < memoBestScore[key] {
-		return memoBestScore[key]
+	if val, exists := memo[key]; exists {
+		return val.score
 	}
-	memoBestScore[key] = state.score
+
+	// explore the path
+	state.score += releasePressureOneMinute(state.opened, rules.flowRates)
+	state.minutesLeft--
 
 	// find the best path from here
-	var finalState State
-	var finalScore int
+	bestScore := 0
 
 	// if current valve isn't open, open it
+	//fmt.Println(state.position, state.opened)
 	if _, isOpen := state.opened[state.position]; !isOpen && rules.flowRates[state.position] > 0 {
-		_state := state
+		_state := copyState(state)
 		_state.opened[state.position] = true
-		_score := findMaxPressureRelief(_state, rules, memoBestScore)
-		if _score > finalScore {
-			finalState = _state
-			finalScore = _score
-		}
+		_state.path += "+"
+		_score := findMaxPressureRelief(_state, rules, memo)
+		bestScore = utils.Max(_score, bestScore)
 	}
 
 	// or follow any of the paths
 	for _, to := range rules.graph[state.position] {
-		//fmt.Println("making move from ", state.position, " to ", to, ". ", state)
-		_state := state
+		_state := copyState(state)
 		_state.position = to
-		_score := findMaxPressureRelief(_state, rules, memoBestScore)
-		if _score > finalScore {
-			finalState = _state
-			finalScore = _score
-		}
+		_state.path += string(to[0])
+		_score := findMaxPressureRelief(_state, rules, memo)
+		bestScore = utils.Max(_score, bestScore)
 	}
-	_ = finalState
-	return finalScore
+
+	memo[key] = ScorePath{
+		score: bestScore,
+		path:  state.path,
+	}
+
+	return bestScore
 }
 
 func releasePressureOneMinute(opened map[string]interface{}, flowRates map[string]int) int {
@@ -136,6 +130,20 @@ func releasePressureOneMinute(opened map[string]interface{}, flowRates map[strin
 		p += flowRates[valve]
 	}
 	return p
+}
+
+func copyState(state State) State {
+	opened := make(map[string]interface{})
+	for k, v := range state.opened {
+		opened[k] = v
+	}
+	return State{
+		minutesLeft: state.minutesLeft,
+		score:       state.score,
+		position:    state.position,
+		opened:      opened,
+		path:        state.path,
+	}
 }
 
 func part2(filename string) int {
