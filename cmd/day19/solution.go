@@ -10,20 +10,25 @@ import (
 
 func main() {
 	fmt.Println(part1("example_input.txt"))
-	//fmt.Println(part1("input.txt"))
-	//fmt.Println(part2("example_input.txt"))
-	//fmt.Println(part2("input.txt"))
+	fmt.Println(part1("input.txt"))
+	fmt.Println(part2("example_input.txt"))
+	fmt.Println(part2("input.txt"))
 }
 
-type blueprint struct {
+var (
+	bestScore = 0
+	nVisited  = 0
+)
+
+type Blueprint struct {
 	id                                                                                                                        int
 	oreRobotCostOre, clayRobotCostOre, obsidianRobotCostOre, obsidianRobotCostClay, geodeRobotCostOre, geodeRobotCostObsidian int
 }
 
-type state struct {
-	minute    int
-	resources Resources
-	robots    Robots
+type State struct {
+	minutesLeft int
+	resources   Resources
+	robots      Robots
 }
 
 type Resources struct {
@@ -34,7 +39,7 @@ type Robots struct {
 	ore, clay, obsidian, geode int
 }
 
-func loadInput(filename string) (blueprints []blueprint) {
+func loadInput(filename string) (blueprints []Blueprint) {
 	f, err := os.Open(filename)
 	utils.CheckErr(err)
 	scanner := bufio.NewScanner(f)
@@ -44,7 +49,7 @@ func loadInput(filename string) (blueprints []blueprint) {
 		line := scanner.Text()
 		r := regexp.MustCompile("\\d+")
 		s := r.FindAllString(line, -1)
-		blueprints = append(blueprints, blueprint{
+		blueprints = append(blueprints, Blueprint{
 			i,
 			utils.StrToInt(s[1]),
 			utils.StrToInt(s[2]),
@@ -59,130 +64,123 @@ func loadInput(filename string) (blueprints []blueprint) {
 	return blueprints
 }
 
-func whatRobotsCanBeBuilt(x Resources, b blueprint) (robotsToBeBuilt []Robots) {
-
-	robotsSet := make(map[Robots]bool)
-	var selected Robots
-	findRobotCombinations(x, selected, &robotsSet, b) // side effects to robotsSet
-
-	// extract keys
-	keys := make([]Robots, len(robotsSet)+1)
-	i := 0
-	for k := range robotsSet {
-		keys[i] = k
-		i++
-	}
-	keys = append(keys, Robots{})
-	//fmt.Println(x, keys)
-	return keys
-}
-
-func findRobotCombinations(x Resources, selected Robots, robotSet *map[Robots]bool, b blueprint) {
-	if _, visited := (*robotSet)[selected]; visited {
-		fmt.Println("already visited", selected)
-		return
-	}
-
-	// try to make a clay robot
-	if x.ore/b.clayRobotCostOre > 0 {
-		//fmt.Println("can make clay")
-		x2 := x                      // copy state
-		selectedClay := selected     // copy state
-		selectedClay.clay += 1       // add robot
-		x2.ore -= b.clayRobotCostOre // subtract robot cost
-		(*robotSet)[selectedClay] = true
-		//fmt.Println(robotSet)
-		findRobotCombinations(x2, selectedClay, robotSet, b)
-	}
-
-	if x.ore/b.obsidianRobotCostOre > 0 && x.clay/b.obsidianRobotCostClay > 0 {
-		//fmt.Println("can make obsidian")
-		x2 := x
-		selectedObsidian := selected
-		selectedObsidian.obsidian += 1
-		x2.ore -= b.obsidianRobotCostOre
-		x2.clay -= b.obsidianRobotCostClay
-		(*robotSet)[selectedObsidian] = true
-		findRobotCombinations(x2, selectedObsidian, robotSet, b)
-	}
-
-	//// either build a clay, or obsidian, or geode, or do nothing
+func findRobotCombinations(x Resources, b Blueprint) []Robots {
+	var robots []Robots
 	if x.ore/b.geodeRobotCostOre > 0 && x.obsidian/b.geodeRobotCostObsidian > 0 {
-		//fmt.Println("can make geode")
-		x2 := x
-		selectedGeode := selected
-		selectedGeode.geode += 1
-		x2.ore -= b.geodeRobotCostOre
-		x2.obsidian -= b.geodeRobotCostObsidian
-		(*robotSet)[selectedGeode] = true
-		findRobotCombinations(x2, selectedGeode, robotSet, b)
+		// definitely build a geode robot
+		return []Robots{{0, 0, 0, 1}}
+	}
+	if x.ore/b.obsidianRobotCostOre > 0 && x.clay/b.obsidianRobotCostClay > 0 {
+		robots = append(robots, Robots{0, 0, 1, 0})
+	}
+	if x.ore/b.clayRobotCostOre > 0 {
+		robots = append(robots, Robots{0, 1, 0, 0})
+	}
+	if x.ore/b.oreRobotCostOre > 0 {
+		robots = append(robots, Robots{1, 0, 0, 0})
+	}
+	robots = append(robots, Robots{0, 0, 0, 0})
+	//fmt.Println("robots", robots)
+	//fmt.Println("resources", x)
+
+	return robots
+}
+
+func (x *State) buildRobot(b Blueprint, toBuild Robots) {
+	if toBuild.geode > 0 {
+		x.resources.ore -= b.geodeRobotCostOre
+		x.resources.obsidian -= b.geodeRobotCostObsidian
+		x.robots.geode += 1
+	}
+	if toBuild.obsidian > 0 {
+		x.resources.ore -= b.obsidianRobotCostOre
+		x.resources.clay -= b.obsidianRobotCostClay
+		x.robots.obsidian += 1
+	}
+	if toBuild.clay > 0 {
+		x.resources.ore -= b.clayRobotCostOre
+		x.robots.clay += 1
+	}
+	if toBuild.ore > 0 {
+		x.resources.ore -= b.oreRobotCostOre
+		x.robots.ore += 1
 	}
 }
 
-func mineResources(x state) state {
+func (x *State) mineResources() {
 	x.resources.ore += x.robots.ore
 	x.resources.clay += x.robots.clay
 	x.resources.obsidian += x.robots.obsidian
 	x.resources.geode += x.robots.geode
-	return x
 }
 
-func addRobots(x state, robots Robots) state {
+func (x *State) addRobots(robots Robots) {
 	x.robots.ore += robots.ore
 	x.robots.clay += robots.clay
 	x.robots.obsidian += robots.obsidian
 	x.robots.geode += robots.geode
-	return x
 }
 
-func simulate(x state, b blueprint, dp *map[state]int) (nGeodes int) {
-	if nGeodes, visited := (*dp)[x]; visited {
-		return nGeodes
+func (x *State) oneMinute(b Blueprint, robotsToAdd Robots) {
+	x.mineResources()
+	x.buildRobot(b, robotsToAdd)
+	x.minutesLeft -= 1
+}
+
+func simulate(x State, b Blueprint, visited map[State]bool) (nGeodes int, finalState State) {
+	//fmt.Printf("Minute %d\n", x.minutesLeft)
+	maxPossibleGeodes := x.resources.geode + x.robots.geode*x.minutesLeft + max((x.minutesLeft)*(x.minutesLeft-1)/2, 0)
+	if x.minutesLeft <= 0 || maxPossibleGeodes < bestScore {
+		//if x.minutesLeft <= 0 {
+		return x.resources.geode, x
 	}
 
-	fmt.Printf("Minute %d\n", x.minute)
-	if x.minute == 5 {
-		return x.resources.geode
+	// memo visited states
+	if _, ok := visited[x]; ok {
+		nVisited++
+		if nVisited%1000000 == 0 {
+			//fmt.Println("nVisited", nVisited)
+		}
+		return 0, x
+	} else {
+		visited[x] = true
 	}
+
 	// what action can we take?
-	actions := whatRobotsCanBeBuilt(x.resources, b)
+	actions := findRobotCombinations(x.resources, b)
 
-	maxFinalGeodes := 0
 	for _, action := range actions {
-		x2 := oneMinute(x, action)
-		fmt.Println(x2)
-		nGeodes = simulate(x2, b, dp)
-		if nGeodes > maxFinalGeodes {
-			maxFinalGeodes = nGeodes
+
+		x2 := deepCopy(x)
+		x2.oneMinute(b, action)
+		//fmt.Println("state x ", x2)
+		//fmt.Println(x2.robots.geode)
+
+		nGeodes, x2 = simulate(x2, b, visited)
+		if nGeodes > bestScore {
+			bestScore = nGeodes
+			finalState = x2
+			//fmt.Println("new max", maxFinalGeodes, x2)
 		}
 	}
-	return maxFinalGeodes
-}
-
-func oneMinute(x state, robotsToAdd Robots) state {
-	// perform mining
-	x = mineResources(x)
-
-	// add robots
-	x = addRobots(x, robotsToAdd)
-
-	// increment time
-	x.minute += 1
-	return x
+	return bestScore, finalState
 }
 
 func part1(filename string) int {
 	blueprints := loadInput(filename)
-	fmt.Println("blueprint, ", blueprints)
+	//fmt.Println("Blueprint, ", blueprints)
 	totalQualityLevel := 0
 	for _, blueprint := range blueprints {
-		x := state{
-			0,
+		bestScore = 0
+		visited := make(map[State]bool)
+		x := State{
+			24,
 			Resources{0, 0, 0, 0},
 			Robots{1, 0, 0, 0},
 		}
-		dp := make(map[state]int)
-		nGeodes := simulate(x, blueprint, &dp)
+		nGeodes, x := simulate(x, blueprint, visited)
+		fmt.Println("Blueprint ", blueprint.id, "nGeodes", nGeodes)
+		//fmt.Println("x", x)
 		totalQualityLevel += nGeodes * blueprint.id
 		fmt.Println("total quality level: ", totalQualityLevel)
 	}
@@ -191,5 +189,41 @@ func part1(filename string) int {
 }
 
 func part2(filename string) int {
-	return 0
+	blueprints := loadInput(filename)
+	fmt.Println("Blueprint, ", blueprints)
+	quadraticTotal := 1
+	if len(blueprints) > 3 {
+		blueprints = blueprints[:3]
+	}
+	for _, blueprint := range blueprints {
+		bestScore = 0
+		visited := make(map[State]bool)
+		x := State{
+			32,
+			Resources{0, 0, 0, 0},
+			Robots{1, 0, 0, 0},
+		}
+		nGeodes, x := simulate(x, blueprint, visited)
+		fmt.Println("Blueprint ", blueprint.id, "nGeodes", nGeodes)
+		//fmt.Println("x", x)
+		quadraticTotal *= nGeodes
+		fmt.Println("quadratic total: ", quadraticTotal)
+	}
+
+	return quadraticTotal
+}
+
+func deepCopy(x State) State {
+	return State{
+		x.minutesLeft,
+		Resources{x.resources.ore, x.resources.clay, x.resources.obsidian, x.resources.geode},
+		Robots{x.robots.ore, x.robots.clay, x.robots.obsidian, x.robots.geode},
+	}
+}
+
+func max(a, b int) int {
+	if a > b {
+		return a
+	}
+	return b
 }
