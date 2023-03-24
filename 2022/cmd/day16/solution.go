@@ -22,6 +22,7 @@ type State struct {
 	opened      map[string]interface{}
 	path        string
 }
+
 type ScorePath struct {
 	score int
 	path  string
@@ -55,6 +56,7 @@ func part1(filename string) int {
 	flowRates, graph := loadInput(filename)
 	fmt.Println(flowRates)
 	fmt.Println(graph)
+
 	state := State{
 		minutesLeft: 30,
 		score:       0,
@@ -62,6 +64,7 @@ func part1(filename string) int {
 		opened:      make(map[string]interface{}),
 		path:        "A",
 	}
+
 	rules := Rules{
 		flowRates: flowRates,
 		graph:     graph,
@@ -69,12 +72,11 @@ func part1(filename string) int {
 
 	memo := make(map[string]ScorePath)
 	res := findMaxPressureRelief(state, rules, memo)
-
 	return res
 }
 
 func makeKey(state State) string {
-	return fmt.Sprintf("%d-%s-%s-%s", state.minutesLeft, state.position, state.opened, state.score)
+	return fmt.Sprintf("%d-%v-%v-%d", state.minutesLeft, state.opened, state.position, state.score)
 }
 
 func findMaxPressureRelief(state State, rules Rules, memo map[string]ScorePath) int {
@@ -84,8 +86,9 @@ func findMaxPressureRelief(state State, rules Rules, memo map[string]ScorePath) 
 		return state.score
 	}
 
-	// is the path worth exploring?
+	//is the path worth exploring?
 	key := makeKey(state)
+	//fmt.Println(key)
 	if val, exists := memo[key]; exists {
 		return val.score
 	}
@@ -95,7 +98,7 @@ func findMaxPressureRelief(state State, rules Rules, memo map[string]ScorePath) 
 	state.minutesLeft--
 
 	// find the best path from here
-	bestScore := 0
+	bestScore := state.score
 
 	// if current valve isn't open, open it
 	//fmt.Println(state.position, state.opened)
@@ -116,11 +119,12 @@ func findMaxPressureRelief(state State, rules Rules, memo map[string]ScorePath) 
 		bestScore = utils.Max(_score, bestScore)
 	}
 
+	//if v := memo[key].score; v < bestScore {
 	memo[key] = ScorePath{
 		score: bestScore,
 		path:  state.path,
 	}
-
+	//}
 	return bestScore
 }
 
@@ -147,5 +151,44 @@ func copyState(state State) State {
 }
 
 func part2(filename string) int {
-	return 0
+	flowRates, graph := loadInput(filename)
+	fmt.Println(flowRates)
+	fmt.Println(graph)
+	fmt.Println(flowRates)
+	fmt.Println(graph)
+	state := State{
+		minutesLeft: 26,
+		score:       0,
+		position:    "AA",
+		opened:      make(map[string]interface{}),
+		path:        "A",
+	}
+	rules := Rules{
+		flowRates: flowRates,
+		graph:     graph,
+	}
+
+	memo := make(map[string]ScorePath)
+	res := findMaxPressureRelief(state, rules, memo)
+	fmt.Println(memo)
+	return res
+}
+
+func simplifyBidirectionalGraph(nodes map[string][]string, flowRates map[string]int) (nodesAfter map[string][]string, flowRatesAfter map[string]int) {
+	var nodesToRemove []string
+	for node, _ := range nodes {
+		if flowRates[node] == 0 {
+			nodesToRemove = append(nodesToRemove, node)
+			for _, to := range nodes[node] {
+				nodes[to] = utils.IdempotentRemove(nodes[to], node)
+				nodes[to] = utils.IdempotentAdds(nodes[to], nodes[node])
+			}
+
+		}
+	}
+	for _, node := range nodesToRemove {
+		delete(nodes, node)
+		delete(flowRates, node)
+	}
+	return nodes, flowRates
 }
