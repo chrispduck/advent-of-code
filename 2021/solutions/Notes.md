@@ -15,3 +15,8 @@
 * string::parse<i32> assumed base 10 string number
 * use vec::retain to filter vector items based on a condition
 * use &[u32] for slice of u32, can be an array or vector. Read but cannot modify the vector.
+
+## Day 4 learnings
+* `iter` borrows each element of the collection and leaves the collection untouched
+* `into_iter` consumes (moves) the collection, so it cannot be used afterwards
+* `iter_mut` borrows the elements of the collection mutably, it can be used afterwards
