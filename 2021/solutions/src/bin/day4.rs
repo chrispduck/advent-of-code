@@ -7,14 +7,13 @@ const N_ROWS: usize = 5;
 const N_COLS: usize = 5;
 
 fn main() {
-    let input_dir = "data/day4/".to_string();
+    let input_dir = Path::new("data/day4/");
 
-    let (numbers, score_cards) =
-        load_input(format!("{}{}", input_dir, "example_input.txt").as_str());
+    let (numbers, score_cards) = load_input(input_dir.join("example_input.txt").to_str().unwrap());
     println!("part1 : {}", part1(numbers.clone(), score_cards.clone()));
     println!("part2 : {}", part2(numbers.clone(), score_cards.clone()));
 
-    let (numbers, score_cards) = load_input(format!("{}{}", input_dir, "input.txt").as_str());
+    let (numbers, score_cards) = load_input(input_dir.join("input.txt").to_str().unwrap());
     println!("part1 : {}", part1(numbers.clone(), score_cards.clone()));
     println!("part2 : {}", part2(numbers.clone(), score_cards.clone()));
 }
@@ -112,17 +111,15 @@ fn load_input(filename: &str) -> (Vec<u32>, Vec<ScoreCard>) {
         .collect();
     let mut boards: Vec<ScoreCard> = vec![];
 
-    contents.split_once("\n\n").unwrap(); // skip the empty line
-
     // read the scorecards
     while let Some((board_string, rest)) = contents.split_once("\n\n") {
         contents = rest;
         let mut board = ScoreCard::new();
         let mut board_lines = board_string.trim().lines();
 
+        let re = Regex::new(" +").unwrap();
         for i in 0..N_ROWS {
             if let Some(line) = board_lines.next() {
-                let re = Regex::new(" +").unwrap();
                 let nums: Vec<&str> = re.split(line.trim()).filter(|x| !x.is_empty()).collect();
                 for j in 0..N_COLS {
                     board.numbers[i][j] = nums[j].parse::<u32>().unwrap();
@@ -134,12 +131,11 @@ fn load_input(filename: &str) -> (Vec<u32>, Vec<ScoreCard>) {
     return (numbers, boards);
 }
 
-fn part1(numbers: Vec<u32>, score_cards: Vec<ScoreCard>) -> u32 {
+fn part1(numbers: Vec<u32>, mut score_cards: Vec<ScoreCard>) -> u32 {
     // return score of first card that wins
-    let mut score_cards = score_cards.clone();
     for number in numbers {
         for score_card in &mut score_cards {
-            if score_card.tick_number(number) {}
+            score_card.tick_number(number);
             if score_card.is_complete() {
                 return score_card.count_unmarked_nums() * number as u32;
             }
@@ -148,13 +144,12 @@ fn part1(numbers: Vec<u32>, score_cards: Vec<ScoreCard>) -> u32 {
     return 0;
 }
 
-fn part2(numbers: Vec<u32>, score_cards: Vec<ScoreCard>) -> u32 {
+fn part2(numbers: Vec<u32>, mut score_cards: Vec<ScoreCard>) -> u32 {
     // return the score of the card that would win last
-    let mut score_cards = score_cards.clone();
     for number in numbers {
         let len_before = score_cards.len();
         for score_card in &mut score_cards {
-            if score_card.tick_number(number) {}
+            score_card.tick_number(number);
             if score_card.is_complete() && len_before == 1 {
                 return score_card.count_unmarked_nums() * number as u32;
             }
