@@ -3,42 +3,42 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
-// const N_ROWS: usize = 5;
-// const N_COLS: usize = 5;
+const N_ROWS: usize = 5;
+const N_COLS: usize = 5;
 
 fn main() {
     let input_dir = "data/day4/".to_string();
 
     let (numbers, score_cards) =
         load_input(format!("{}{}", input_dir, "example_input.txt").as_str());
-    println!("part1 : {}", part1(numbers, score_cards));
-    // println!("part2 : {}", part2(&v));
+    println!("part1 : {}", part1(numbers.clone(), score_cards.clone()));
+    println!("part2 : {}", part2(numbers.clone(), score_cards.clone()));
 
     let (numbers, score_cards) = load_input(format!("{}{}", input_dir, "input.txt").as_str());
-    println!("part1 : {}", part1(numbers, score_cards));
-    // println!("part2 : {}", part2(&v));
+    println!("part1 : {}", part1(numbers.clone(), score_cards.clone()));
+    println!("part2 : {}", part2(numbers.clone(), score_cards.clone()));
 }
 
 #[derive(Debug, Clone)]
 struct ScoreCard {
     // fixed size array of 5 uint of 5 uint;
     // 5 rows of 5 columns
-    numbers: [[u32; 5]; 5],
-    ticked: [[bool; 5]; 5],
+    numbers: [[u32; N_COLS]; N_ROWS],
+    ticked: [[bool; N_COLS]; N_ROWS],
 }
 
 impl ScoreCard {
     fn new() -> ScoreCard {
         ScoreCard {
-            numbers: [[0; 5]; 5],
-            ticked: [[false; 5]; 5],
+            numbers: [[0; N_COLS]; N_ROWS],
+            ticked: [[false; N_COLS]; N_ROWS],
         }
     }
     // tick a number on the scorecard
     fn tick_number(&mut self, number: u32) -> bool {
         let mut ticked = false;
-        for i in 0..5 {
-            for j in 0..5 {
+        for i in 0..N_ROWS {
+            for j in 0..N_COLS {
                 if self.numbers[i][j] == number {
                     self.ticked[i][j] = true;
                     ticked = true;
@@ -50,9 +50,9 @@ impl ScoreCard {
 
     // check if a row is complete
     fn is_any_row_complete(&self) -> bool {
-        for i in 0..5 {
+        for i in 0..N_ROWS {
             let mut row_complete = true;
-            for j in 0..5 {
+            for j in 0..N_COLS {
                 if !self.ticked[i][j] {
                     row_complete = false;
                 }
@@ -66,9 +66,9 @@ impl ScoreCard {
 
     // check if a column is complete
     fn is_any_column_complete(&self) -> bool {
-        for j in 0..5 {
+        for j in 0..N_COLS {
             let mut column_complete = true;
-            for i in 0..5 {
+            for i in 0..N_ROWS {
                 if !self.ticked[i][j] {
                     column_complete = false;
                 }
@@ -87,8 +87,8 @@ impl ScoreCard {
 
     fn count_unmarked_nums(&self) -> u32 {
         let mut count = 0;
-        for i in 0..5 {
-            for j in 0..5 {
+        for i in 0..N_ROWS {
+            for j in 0..N_COLS {
                 if !self.ticked[i][j] {
                     count += self.numbers[i][j];
                 }
@@ -98,12 +98,13 @@ impl ScoreCard {
     }
 }
 
-fn load_input(fname: &str) -> (Vec<u32>, Vec<ScoreCard>) {
-    let data_path = Path::new(fname);
+fn load_input(filename: &str) -> (Vec<u32>, Vec<ScoreCard>) {
+    let data_path = Path::new(filename);
     let mut file = File::open(data_path).unwrap();
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
 
+    // first line is the numbers
     let (numbers_str, mut contents): (&str, &str) = contents.split_once('\n').unwrap();
     let numbers: Vec<u32> = numbers_str
         .split(',')
@@ -113,18 +114,17 @@ fn load_input(fname: &str) -> (Vec<u32>, Vec<ScoreCard>) {
 
     contents.split_once("\n\n").unwrap(); // skip the empty line
 
-    while let Some((mut board_string, rest)) = contents.split_once("\n\n") {
+    // read the scorecards
+    while let Some((board_string, rest)) = contents.split_once("\n\n") {
         contents = rest;
         let mut board = ScoreCard::new();
-        // println!("board_string :{:?}", board_string);
         let mut board_lines = board_string.trim().lines();
 
-        for i in 0..5 {
+        for i in 0..N_ROWS {
             if let Some(line) = board_lines.next() {
-                // split line and parse into the board
                 let re = Regex::new(" +").unwrap();
                 let nums: Vec<&str> = re.split(line.trim()).filter(|x| !x.is_empty()).collect();
-                for j in 0..5 {
+                for j in 0..N_COLS {
                     board.numbers[i][j] = nums[j].parse::<u32>().unwrap();
                 }
             }
@@ -135,20 +135,12 @@ fn load_input(fname: &str) -> (Vec<u32>, Vec<ScoreCard>) {
 }
 
 fn part1(numbers: Vec<u32>, score_cards: Vec<ScoreCard>) -> u32 {
-    // println!("numbers: {:?}", numbers);
-    // println!("score_cards: {:?}", score_cards);
-
+    // return score of first card that wins
     let mut score_cards = score_cards.clone();
     for number in numbers {
         for score_card in &mut score_cards {
-            if score_card.tick_number(number) {
-                // println!("ticked {:?} on score_card: {:?}", number, score_card);
-            }
+            if score_card.tick_number(number) {}
             if score_card.is_complete() {
-                // println!("score_card: {:?}", score_card);
-                // println!("number: {:?}", number);
-                let unmarked_nums = score_card.count_unmarked_nums();
-                // println!("unmarked_nums: {:?}", unmarked_nums);
                 return score_card.count_unmarked_nums() * number as u32;
             }
         }
@@ -156,7 +148,18 @@ fn part1(numbers: Vec<u32>, score_cards: Vec<ScoreCard>) -> u32 {
     return 0;
 }
 
-fn part2(v: &Vec<i32>) -> i32 {
-    // TODO implement
+fn part2(numbers: Vec<u32>, score_cards: Vec<ScoreCard>) -> u32 {
+    // return the score of the card that would win last
+    let mut score_cards = score_cards.clone();
+    for number in numbers {
+        let len_before = score_cards.len();
+        for score_card in &mut score_cards {
+            if score_card.tick_number(number) {}
+            if score_card.is_complete() && len_before == 1 {
+                return score_card.count_unmarked_nums() * number as u32;
+            }
+        }
+        score_cards.retain(|x| !x.is_complete());
+    }
     return 0;
 }
