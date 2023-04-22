@@ -3,6 +3,9 @@ use std::fs::File;
 use std::io::Read;
 use std::path::Path;
 
+// const N_ROWS: usize = 5;
+// const N_COLS: usize = 5;
+
 fn main() {
     let input_dir = "data/day4/".to_string();
 
@@ -10,9 +13,9 @@ fn main() {
         load_input(format!("{}{}", input_dir, "example_input.txt").as_str());
     println!("part1 : {}", part1(numbers, score_cards));
     // println!("part2 : {}", part2(&v));
-    //
-    // let v = load_input(format!("{}{}", input_dir, "input.txt").as_str());
-    // println!("part1 : {}", part1(&v));
+
+    let (numbers, score_cards) = load_input(format!("{}{}", input_dir, "input.txt").as_str());
+    println!("part1 : {}", part1(numbers, score_cards));
     // println!("part2 : {}", part2(&v));
 }
 
@@ -32,14 +35,17 @@ impl ScoreCard {
         }
     }
     // tick a number on the scorecard
-    fn tick_number(&mut self, number: u32) {
+    fn tick_number(&mut self, number: u32) -> bool {
+        let mut ticked = false;
         for i in 0..5 {
             for j in 0..5 {
                 if self.numbers[i][j] == number {
                     self.ticked[i][j] = true;
+                    ticked = true;
                 }
             }
         }
+        return ticked;
     }
 
     // check if a row is complete
@@ -84,7 +90,7 @@ impl ScoreCard {
         for i in 0..5 {
             for j in 0..5 {
                 if !self.ticked[i][j] {
-                    count += 1;
+                    count += self.numbers[i][j];
                 }
             }
         }
@@ -106,21 +112,18 @@ fn load_input(fname: &str) -> (Vec<u32>, Vec<ScoreCard>) {
     let mut boards: Vec<ScoreCard> = vec![];
 
     contents.split_once("\n\n").unwrap(); // skip the empty line
-    println!("contents: {}", contents);
 
     while let Some((mut board_string, rest)) = contents.split_once("\n\n") {
         contents = rest;
         let mut board = ScoreCard::new();
-        println!("board_string :{:?}", board_string);
+        // println!("board_string :{:?}", board_string);
         let mut board_lines = board_string.trim().lines();
 
         for i in 0..5 {
             if let Some(line) = board_lines.next() {
                 // split line and parse into the board
                 let re = Regex::new(" +").unwrap();
-                println!("line: {:?}", line);
                 let nums: Vec<&str> = re.split(line.trim()).filter(|x| !x.is_empty()).collect();
-                println!("nums: {:?}", nums);
                 for j in 0..5 {
                     board.numbers[i][j] = nums[j].parse::<u32>().unwrap();
                 }
@@ -132,16 +135,20 @@ fn load_input(fname: &str) -> (Vec<u32>, Vec<ScoreCard>) {
 }
 
 fn part1(numbers: Vec<u32>, score_cards: Vec<ScoreCard>) -> u32 {
-    println!("numbers: {:?}", numbers);
-    println!("score_cards: {:?}", score_cards);
+    // println!("numbers: {:?}", numbers);
+    // println!("score_cards: {:?}", score_cards);
 
     let mut score_cards = score_cards.clone();
     for number in numbers {
         for score_card in &mut score_cards {
-            score_card.tick_number(number);
+            if score_card.tick_number(number) {
+                // println!("ticked {:?} on score_card: {:?}", number, score_card);
+            }
             if score_card.is_complete() {
-                println!("score_card: {:?}", score_card);
-                println!("number: {:?}", number);
+                // println!("score_card: {:?}", score_card);
+                // println!("number: {:?}", number);
+                let unmarked_nums = score_card.count_unmarked_nums();
+                // println!("unmarked_nums: {:?}", unmarked_nums);
                 return score_card.count_unmarked_nums() * number as u32;
             }
         }
