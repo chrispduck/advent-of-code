@@ -6,15 +6,15 @@ use num_complex::Complex;
 
 fn main() {
     // TODO change to day number
-    let input_dir = "data/dayN/";
+    let input_dir = Path::new("data/dayN/");
 
-    let v = load_input(input_dir + "example_input.txt");
-    println!("part1 : {}", part1(&v));
-    println!("part2 : {}", part2(&v));
+    let data = load_input(input_dir.join("example_input.txt").to_str().unwrap());
+    println!("part1 : {}", part1(data.clone()));
+    println!("part2 : {}", part2(data));
 
-    let v = load_input(input_dir + "input.txt");
-    println!("part1 : {}", part1(&v));
-    println!("part2 : {}", part2(&v));
+    let data = load_input(input_dir.join("input.txt").to_str().unwrap());
+    println!("part1 : {}", part1(data.clone()));
+    println!("part2 : {}", part2(data));
 }
 
 fn load_input(fname: &str) -> Vec<i32> {
@@ -30,12 +30,12 @@ fn load_input(fname: &str) -> Vec<i32> {
     return commands;
 }
 
-fn part1(v: &Vec<i32>) -> i32 {
+fn part1(v: Vec<i32>) -> i32 {
     // TODO implement
     return 0;
 }
 
-fn part2(v: &Vec<i32>) -> i32 {
+fn part2(v: Vec<i32>) -> i32 {
     // TODO implement
     return 0;
 }
