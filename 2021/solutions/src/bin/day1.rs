@@ -16,7 +16,7 @@ fn main() {
     println!("part2 : {}", part2(&v));
 }
 
-fn load_input(fname: &str) -> Vec<i32> {
+fn load_input(fname: &str) -> Vec<u64> {
     let data_path = Path::new(fname);
     // println!("current_dir: {:?}", current_dir());
     let mut file = File::open(data_path).unwrap();
@@ -25,15 +25,15 @@ fn load_input(fname: &str) -> Vec<i32> {
     // println!("contents: {}", contents);
 
     // Using collect to create a vector
-    let _v: Vec<i32> = contents
+    let _v: Vec<u64> = contents
         .lines()
-        .map(|s| s.parse::<i32>().unwrap())
+        .map(|s| s.parse::<u64>().unwrap())
         .collect();
 
     // Another way to create a vector
-    let mut v2: Vec<i32> = vec![];
+    let mut v2: Vec<u64> = vec![];
     for line in contents.lines() {
-        let i = line.parse::<i32>().unwrap();
+        let i = line.parse::<u64>().unwrap();
         v2.push(i);
     }
     // println!("v: {:?}", v);
@@ -41,7 +41,7 @@ fn load_input(fname: &str) -> Vec<i32> {
     return v2;
 }
 
-fn part1(v: &Vec<i32>) -> i32 {
+fn part1(v: &Vec<u64>) -> u64 {
     let mut sum = 0;
     for i in 1..v.len() {
         if v[i - 1] < v[i] {
@@ -51,7 +51,7 @@ fn part1(v: &Vec<i32>) -> i32 {
     return sum;
 }
 
-fn part2(v: &Vec<i32>) -> i32 {
+fn part2(v: &Vec<u64>) -> u64 {
     let mut sum = 0;
     for i in 1..(v.len() - 2) {
         let lhs = v[i - 1] + v[i] + v[i + 1];

@@ -12,7 +12,7 @@
 
 ## Day 3 learnings
 * u32::from_str_radix for parsing non-decimal strings to numbers
-* string::parse<i32> assumed base 10 string number
+* string::parse<u64> assumed base 10 string number
 * use vec::retain to filter vector items based on a condition
 * use &[u32] for slice of u32, can be an array or vector. Read but cannot modify the vector.
 

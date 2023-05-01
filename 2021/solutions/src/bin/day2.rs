@@ -16,20 +16,20 @@ fn main() {
     println!("part2 : {}", part2(&v));
 }
 
-fn load_input(fname: &str) -> Vec<Complex<i32>> {
+fn load_input(fname: &str) -> Vec<Complex<u64>> {
     let data_path = Path::new(fname);
     let mut file = File::open(data_path).unwrap();
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
 
-    let mut commands: Vec<Complex<i32>> = vec![];
+    let mut commands: Vec<Complex<u64>> = vec![];
     for line in contents.lines() {
         let line_vec: Vec<&str> = line.split(' ').collect();
         let direction: &str = line_vec[0];
         let distance: &str = &line_vec[1].to_lowercase();
         // println!("direction: {}, distance: {}", direction, distance);
         let complex = to_complex(direction);
-        let distance = distance.parse::<i32>().unwrap();
+        let distance = distance.parse::<u64>().unwrap();
         let complex = complex * distance;
         commands.push(complex);
     }
@@ -38,7 +38,7 @@ fn load_input(fname: &str) -> Vec<Complex<i32>> {
     return commands;
 }
 
-fn part1(v: &Vec<Complex<i32>>) -> i32 {
+fn part1(v: &Vec<Complex<u64>>) -> u64 {
     let mut position = Complex::new(0, 0);
     for command in v {
         position += command;
@@ -46,7 +46,7 @@ fn part1(v: &Vec<Complex<i32>>) -> i32 {
     return position.re.abs() * position.im.abs();
 }
 
-fn part2(v: &Vec<Complex<i32>>) -> i32 {
+fn part2(v: &Vec<Complex<u64>>) -> u64 {
     let mut position = Complex::new(0, 0);
     let mut aim = Complex::new(1, 0);
 
@@ -62,7 +62,7 @@ fn part2(v: &Vec<Complex<i32>>) -> i32 {
     return position.re.abs() * position.im.abs();
 }
 
-fn to_complex(direction: &str) -> Complex<i32> {
+fn to_complex(direction: &str) -> Complex<u64> {
     match direction {
         "up" => Complex::new(0, -1),
         "down" => Complex::new(0, 1),
