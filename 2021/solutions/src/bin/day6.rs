@@ -9,7 +9,6 @@ const NEW_FISH_TIMER: u64 = 8;
 const OLD_FISH_TIMER: u64 = 6;
 
 fn main() {
-    // TODO change to day number
     let input_dir = Path::new("data/day6/");
 
     let data = load_input(input_dir.join("example_input.txt").to_str().unwrap());
