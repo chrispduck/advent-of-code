@@ -1,7 +1,8 @@
-.PHONY: compile
+DAY=N
 
+.PHONY: compile
 compile:
-	clang++ main.cpp -o main
+	clang++ -std=c++17 main.cpp -o main -Wall
 
 run:
 	./main
