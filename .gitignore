@@ -1,3 +1,7 @@
 build
 .idea/
 .idea/*
+
+# AOC specific
+input.txt
+test_input.txt
