@@ -1,3 +1,9 @@
 build
 .idea/
 .idea/*
+.vscode
+
+# AOC specific
+input.txt
+test_input.txt
+main
