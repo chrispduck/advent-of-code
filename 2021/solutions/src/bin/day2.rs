@@ -16,53 +16,53 @@ fn main() {
     println!("part2 : {}", part2(&v));
 }
 
-fn load_input(fname: &str) -> Vec<Complex<u64>> {
+fn load_input(fname: &str) -> Vec<(String, i64)> {
     let data_path = Path::new(fname);
     let mut file = File::open(data_path).unwrap();
     let mut contents = String::new();
     file.read_to_string(&mut contents).unwrap();
 
-    let mut commands: Vec<Complex<u64>> = vec![];
+    let mut commands: Vec<(String, i64)> = vec![];
     for line in contents.lines() {
         let line_vec: Vec<&str> = line.split(' ').collect();
         let direction: &str = line_vec[0];
-        let distance: &str = &line_vec[1].to_lowercase();
-        // println!("direction: {}, distance: {}", direction, distance);
-        let complex = to_complex(direction);
-        let distance = distance.parse::<u64>().unwrap();
-        let complex = complex * distance;
-        commands.push(complex);
+        let distance: &str = line_vec[1];
+        let distance = distance.parse::<i64>().unwrap();
+        commands.push((direction.to_string(), distance));
     }
-    // println!("commands: {:?}", commands);
 
     return commands;
 }
 
-fn part1(v: &Vec<Complex<u64>>) -> u64 {
+fn part1(v: &Vec<(String, i64)>) -> i64 {
     let mut position = Complex::new(0, 0);
-    for command in v {
-        position += command;
+
+    for (direction, distance) in v {
+        position += to_complex(direction) * distance;
     }
+
     return position.re.abs() * position.im.abs();
 }
 
-fn part2(v: &Vec<Complex<u64>>) -> u64 {
+fn part2(v: &Vec<(String, i64)>) -> i64 {
     let mut position = Complex::new(0, 0);
-    let mut aim = Complex::new(1, 0);
+    let mut aim = 0;
 
-    for command in v {
-        if command.im != 0 {
-            aim.im += command.im;
+    for (direction, distance) in v {
+        match direction.as_str() {
+            "forward" => {
+                position += Complex::new(*distance, aim * *distance);
+            },
+            "up" => aim -= distance,
+            "down" => aim += distance,
+            _ => {}
         }
-        if command.re != 0 {
-            position += aim * command.re;
-        }
-        // println!("position: {:?}, aim: {}", position, aim);
     }
+
     return position.re.abs() * position.im.abs();
 }
 
-fn to_complex(direction: &str) -> Complex<u64> {
+fn to_complex(direction: &str) -> Complex<i64> {
     match direction {
         "up" => Complex::new(0, -1),
         "down" => Complex::new(0, 1),

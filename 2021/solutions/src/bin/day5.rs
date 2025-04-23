@@ -49,27 +49,39 @@ fn iterate_between_coords_(
     enable_diag: bool,
 ) -> Vec<Complex<u64>> {
     let mut coords: Vec<Complex<u64>> = vec![];
-    let dx: u64 = to.re - from.re;
-    let dy = to.im - from.im;
+
+    // Convert to signed integers for easier calculations with negative deltas
+    let from_re = from.re as i64;
+    let from_im = from.im as i64;
+    let to_re = to.re as i64;
+    let to_im = to.im as i64;
+
+    let dx: i64 = to_re - from_re;
+    let dy: i64 = to_im - from_im;
+
     if dx == 0 {
-        for abs_delta_y in 0..dy.abs() + 1 {
-            let delta_y = if dy > 0 { abs_delta_y } else { -abs_delta_y };
-            coords.push(Complex::new(from.re, from.im + delta_y));
+        // Vertical line
+        let step = if dy >= 0 { 1 } else { -1 };
+        for delta_y in 0..=dy.abs() {
+            let new_y = (from_im + delta_y * step) as u64;
+            coords.push(Complex::new(from.re, new_y));
         }
     } else if dy == 0 {
-        for abs_delta_x in 0..dx.abs() + 1 {
-            let delta_x = if dx > 0 { abs_delta_x } else { -abs_delta_x };
-            coords.push(Complex::new(from.re + delta_x, from.im));
+        // Horizontal line
+        let step = if dx >= 0 { 1 } else { -1 };
+        for delta_x in 0..=dx.abs() {
+            let new_x = (from_re + delta_x * step) as u64;
+            coords.push(Complex::new(new_x, from.im));
         }
-    } else {
-        if !enable_diag {
-            return coords;
-        }
-        assert!(dx.abs() == dy.abs());
-        for abs_delta_x in 0..dx.abs() + 1 {
-            let delta_x = if dx > 0 { abs_delta_x } else { -abs_delta_x };
-            let delta_y = if dy > 0 { abs_delta_x } else { -abs_delta_x };
-            coords.push(Complex::new(from.re + delta_x, from.im + delta_y));
+    } else if enable_diag && dx.abs() == dy.abs() {
+        // Diagonal line
+        let step_x = if dx >= 0 { 1 } else { -1 };
+        let step_y = if dy >= 0 { 1 } else { -1 };
+
+        for delta in 0..=dx.abs() {
+            let new_x = (from_re + delta * step_x) as u64;
+            let new_y = (from_im + delta * step_y) as u64;
+            coords.push(Complex::new(new_x, new_y));
         }
     }
 
